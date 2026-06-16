@@ -279,6 +279,20 @@ select.inp{-webkit-appearance:none;appearance:none;background-image:url("data:im
       <button class="btn btn-bl" style="width:100%" onclick="addCustomTask()">Add task</button>
     </div>
 
+    <div class="div"></div>
+    <div class="lbl">Client roster</div>
+    <div id="client-roster-list"></div>
+    <div class="gc" style="margin-top:8px">
+      <input class="inp" style="width:100%;margin-bottom:8px" type="text" id="cr-name" placeholder="Client name">
+      <select class="inp" style="width:100%;margin-bottom:8px" id="cr-tier">
+        <option value="Starter">Starter</option>
+        <option value="Tradie Transformation">Tradie Transformation</option>
+        <option value="Top Dog Physique">Top Dog Physique</option>
+      </select>
+      <input class="inp" style="width:100%;margin-bottom:8px" type="text" id="cr-focus" placeholder="Biggest thing they need to work on">
+      <input class="inp" style="width:100%;margin-bottom:10px" type="text" id="cr-checkin" placeholder="What to bring up in check-in">
+      <button class="btn btn-gn" style="width:100%" onclick="addClient()">Add client</button>
+    </div>
     <div class="footer">SlaterTrained · Built different</div>
   </div>
 
@@ -361,14 +375,17 @@ select.inp{-webkit-appearance:none;appearance:none;background-image:url("data:im
     </div>
 
     <div class="div"></div>
-    <div class="lbl">Body — weight log</div>
+    <div class="lbl">Body — weight trend</div>
     <div class="gc">
-      <div class="metric-grid">
+      <div class="metric-grid" style="margin-bottom:12px">
         <div class="metric"><div class="metric-l">Latest</div><div class="metric-v" id="w-latest">—</div></div>
         <div class="metric"><div class="metric-l">Change</div><div class="metric-v" id="w-change">—</div></div>
+        <div class="metric"><div class="metric-l">Lowest</div><div class="metric-v" id="w-low">—</div></div>
+        <div class="metric"><div class="metric-l">Highest</div><div class="metric-v" id="w-high">—</div></div>
       </div>
-      <svg class="spark" id="w-spark" viewBox="0 0 300 46" preserveAspectRatio="none"></svg>
-      <div class="irow"><input class="inp" type="number" inputmode="decimal" id="w-in" placeholder="kg"><button class="btn btn-bl" onclick="addWeight()">Log weight</button></div>
+      <canvas id="w-chart" style="width:100%;height:160px;display:block;margin-bottom:12px"></canvas>
+      <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:12px" id="w-entries">No entries yet</div>
+      <div class="irow"><input class="inp" type="number" inputmode="decimal" id="w-in" placeholder="kg"><button class="btn btn-bl" onclick="addWeight()">Log weight</button><button class="btn btn-mute" onclick="delLastWeight()">Undo</button></div>
     </div>
 
     <div class="div"></div>
@@ -637,6 +654,19 @@ const splitIdx=(dow+6)%7;
 const todaySplit=SPLIT[splitIdx];
 const isRestDay=todaySplit==='Rest';
 const iceToday=(S.streak%2===0)?'shower':'bath';
+
+/* MONTHLY RESET */
+const thisMonth=new Date().toISOString().slice(0,7);
+if(S.lastMonth&&S.lastMonth!==thisMonth){
+  if(!S.monthlyArchive)S.monthlyArchive=[];
+  S.monthlyArchive.push({month:S.lastMonth,cli:S.cli,rev:S.rev,cash:S.cash,audi:S.audi});
+  S.cli=0;S.rev=0;S.cash=0;S.audi=0;
+  S.hiddenGoals=[];
+  (S.clients||[]).forEach(c=>{c.checkedIn=false;c.checkedInDate='';});
+  rolloverMsg={type:'month',text:'New month — targets reset. Let’s go again.'};
+}
+S.lastMonth=thisMonth;
+save();
 document.getElementById('ice-txt').textContent=iceToday==='shower'?'Cold shower — 5am':'Ice bath — 5am';
 document.getElementById('split-txt').textContent=todaySplit;
 if(isRestDay){document.getElementById('split-pill').style.display='none';document.getElementById('rest-pill').style.display='inline-flex';}
@@ -900,28 +930,148 @@ function addWeight(){
   if(!S.weights)S.weights=[];
   const existing=S.weights.find(w=>w.date===todayKey);
   if(existing)existing.kg=v; else S.weights.push({date:todayKey,kg:v});
-  document.getElementById('w-in').value='';save();renderWeight();showToast('Weight logged',false);
+  document.getElementById('w-in').value='';save();renderWeight();showToast('Weight logged — '+v+'kg',false);
+}
+function delLastWeight(){
+  if(!S.weights||!S.weights.length)return;
+  S.weights.pop();save();renderWeight();showToast('Last entry removed',false);
 }
 function renderWeight(){
   const ws=(S.weights||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
   const latest=ws.length?ws[ws.length-1].kg:null;
   document.getElementById('w-latest').textContent=latest!=null?latest+' kg':'—';
+  const wChange=document.getElementById('w-change');
+  const wLow=document.getElementById('w-low');
+  const wHigh=document.getElementById('w-high');
+  const wEntries=document.getElementById('w-entries');
   if(ws.length>=2){
-    const diff=ws[ws.length-1].kg-ws[0].kg;
-    const el=document.getElementById('w-change');
-    el.textContent=(diff>0?'+':'')+diff.toFixed(1)+' kg';
-    el.style.color=diff>0?'var(--green)':diff<0?'var(--blue)':'var(--text)';
-  } else {document.getElementById('w-change').textContent='—';}
-  const svg=document.getElementById('w-spark');
-  const pts=ws.slice(-12);
-  if(pts.length<2){svg.innerHTML='<text x="150" y="26" text-anchor="middle" fill="rgba(238,242,255,0.3)" font-size="11" font-family="DM Sans">Log 2+ entries to see your trend</text>';return;}
+    const diff=(ws[ws.length-1].kg-ws[0].kg);
+    wChange.textContent=(diff>0?'+':'')+diff.toFixed(1)+' kg';
+    wChange.style.color=diff>0?'var(--red)':diff<0?'var(--green)':'var(--text)';
+  } else {wChange.textContent='—';wChange.style.color='';}
+  if(ws.length){
+    const vals=ws.map(w=>w.kg);
+    wLow.textContent=Math.min(...vals).toFixed(1)+' kg';
+    wHigh.textContent=Math.max(...vals).toFixed(1)+' kg';
+    wEntries.textContent=ws.length+' entr'+(ws.length===1?'y':'ies')+' — started '+ws[0].date;
+  } else {if(wLow)wLow.textContent='—';if(wHigh)wHigh.textContent='—';if(wEntries)wEntries.textContent='No entries yet';}
+  renderWeightChart(ws);
+}
+function renderWeightChart(ws){
+  const canvas=document.getElementById('w-chart');
+  if(!canvas)return;
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.offsetWidth||300;
+  const H=160;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  const pts=ws.slice(-20);
+  if(pts.length<2){
+    ctx.fillStyle='rgba(238,242,255,0.25)';ctx.font='13px DM Sans';ctx.textAlign='center';
+    ctx.fillText('Log 2+ entries to see your trend',W/2,H/2);return;
+  }
   const vals=pts.map(p=>p.kg);
-  const min=Math.min(...vals),max=Math.max(...vals),range=(max-min)||1;
-  const W=300,H=46,pad=4;
-  const coords=pts.map((p,i)=>{const x=pad+(i/(pts.length-1))*(W-2*pad);const y=H-pad-((p.kg-min)/range)*(H-2*pad);return[x,y];});
-  const path=coords.map((c,i)=>(i===0?'M':'L')+c[0].toFixed(1)+' '+c[1].toFixed(1)).join(' ');
-  let dots='';coords.forEach(c=>{dots+='<circle cx="'+c[0].toFixed(1)+'" cy="'+c[1].toFixed(1)+'" r="2" fill="#4F8EFF"/>';});
-  svg.innerHTML='<path d="'+path+'" fill="none" stroke="#4F8EFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+dots;
+  const minV=Math.min(...vals),maxV=Math.max(...vals),range=(maxV-minV)||0.5;
+  const pad={t:16,r:8,b:32,l:44};
+  const cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+  const toX=i=>pad.l+(i/(pts.length-1))*cw;
+  const toY=v=>pad.t+ch-(((v-minV)/range)*ch);
+  for(let i=0;i<=4;i++){
+    const v=minV+(range/4)*i;const y=toY(v);
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);
+    ctx.strokeStyle='rgba(238,242,255,0.07)';ctx.lineWidth=1;ctx.stroke();
+    ctx.fillStyle='rgba(238,242,255,0.35)';ctx.font='10px DM Sans';ctx.textAlign='right';
+    ctx.fillText(v.toFixed(1),pad.l-6,y+3.5);
+  }
+  const grad=ctx.createLinearGradient(0,pad.t,0,H-pad.b);
+  grad.addColorStop(0,'rgba(79,142,255,0.3)');grad.addColorStop(1,'rgba(79,142,255,0.02)');
+  ctx.beginPath();
+  pts.forEach((p,i)=>{i===0?ctx.moveTo(toX(i),toY(p.kg)):ctx.lineTo(toX(i),toY(p.kg));});
+  ctx.lineTo(toX(pts.length-1),H-pad.b);ctx.lineTo(toX(0),H-pad.b);ctx.closePath();
+  ctx.fillStyle=grad;ctx.fill();
+  ctx.beginPath();
+  pts.forEach((p,i)=>{i===0?ctx.moveTo(toX(i),toY(p.kg)):ctx.lineTo(toX(i),toY(p.kg));});
+  ctx.strokeStyle='#4F8EFF';ctx.lineWidth=2;ctx.lineJoin='round';ctx.stroke();
+  pts.forEach((p,i)=>{
+    const x=toX(i),y=toY(p.kg);
+    ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);
+    ctx.fillStyle='#4F8EFF';ctx.fill();
+    ctx.strokeStyle='#06080F';ctx.lineWidth=1.5;ctx.stroke();
+    if(i===0||i===pts.length-1||pts.length<=8){
+      ctx.fillStyle='rgba(238,242,255,0.4)';ctx.font='9px DM Sans';ctx.textAlign='center';
+      ctx.fillText(p.date.slice(5),x,H-pad.b+12);
+    }
+  });
+}
+
+
+/* CLIENT ROSTER */
+const TIER_COLOURS={'Starter':'var(--green)','Tradie Transformation':'var(--blue)','Top Dog Physique':'var(--gold)'};
+const TIER_SHORT={'Starter':'Starter','Tradie Transformation':'Tradie Trans.','Top Dog Physique':'Top Dog'};
+function addClient(){
+  const name=document.getElementById('cr-name').value.trim();
+  const tier=document.getElementById('cr-tier').value;
+  const focus=document.getElementById('cr-focus').value.trim();
+  const checkin=document.getElementById('cr-checkin').value.trim();
+  if(!name){showToast('Enter a client name',true);return;}
+  if(!S.clients)S.clients=[];
+  S.clients.push({id:'cl'+Date.now(),name,tier,focus,checkin,checkedIn:false,checkedInDate:''});
+  document.getElementById('cr-name').value='';
+  document.getElementById('cr-focus').value='';
+  document.getElementById('cr-checkin').value='';
+  save();renderClients();showToast(name+' added',false);
+}
+function toggleCheckIn(id){
+  const c=(S.clients||[]).find(x=>x.id===id);if(!c)return;
+  c.checkedIn=!c.checkedIn;c.checkedInDate=c.checkedIn?todayKey:'';
+  save();renderClients();
+}
+function delClient(id){
+  S.clients=(S.clients||[]).filter(x=>x.id!==id);save();renderClients();
+}
+function renderClients(){
+  const el=document.getElementById('client-roster-list');if(!el)return;
+  const list=S.clients||[];
+  if(!list.length){el.innerHTML='<div style="font-size:13px;color:var(--muted);padding:4px 0 10px">No clients yet. Add one below.</div>';return;}
+  el.innerHTML='';
+  const done=list.filter(c=>c.checkedIn).length;
+  const summary=document.createElement('div');
+  summary.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;';
+  summary.innerHTML='<span style="font-size:13px;color:var(--muted)">'+list.length+' clients</span>'+
+    '<span style="font-size:13px;font-weight:600;color:'+(done===list.length&&list.length>0?'var(--green)':'var(--blue)')+'">'+done+'/'+list.length+' checked in</span>';
+  el.appendChild(summary);
+  list.forEach(c=>{
+    const col=TIER_COLOURS[c.tier]||'var(--blue)';
+    const row=document.createElement('div');
+    row.style.cssText='padding:10px 12px;background:var(--s2);border-radius:11px;margin-bottom:7px;border:.5px solid var(--border);';
+    row.innerHTML=
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">'+
+        '<button style="width:22px;height:22px;border-radius:50%;border:2px solid '+(c.checkedIn?col:'var(--border)')+';background:'+(c.checkedIn?col:'transparent')+';flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;" data-ci="'+c.id+'">'+
+        (c.checkedIn?'<span style="color:#06080F;font-size:11px;font-weight:700">&#10003;</span>':'')+
+        '</button>'+
+        '<div style="flex:1;">'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;">'+
+            '<div style="font-size:14px;font-weight:600;color:var(--text);">'+esc(c.name)+'</div>'+
+            '<div style="font-size:11px;color:'+col+';font-family:Barlow Condensed,sans-serif;letter-spacing:.05em">'+TIER_SHORT[c.tier]+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<button class="tr-del" data-cldel="'+c.id+'">&#215;</button>'+
+      '</div>'+
+      (c.focus?'<div style="font-size:12px;color:var(--green);margin-bottom:4px;line-height:1.3">&#128293; '+esc(c.focus)+'</div>':'')+
+      (c.checkin?'<div style="font-size:12px;color:var(--blue);margin-bottom:8px;line-height:1.3">&#128203; '+esc(c.checkin)+'</div>':'')+
+      '<div style="display:flex;gap:6px;">'+
+        '<input placeholder="Focus area..." data-cf="'+c.id+'" style="flex:1;font-size:11px;padding:5px 8px;border-radius:7px;border:.5px solid var(--border);background:var(--s1);color:var(--text);" value="'+esc(c.focus||'')+'">'+
+        '<input placeholder="Check-in topic..." data-cc="'+c.id+'" style="flex:1;font-size:11px;padding:5px 8px;border-radius:7px;border:.5px solid var(--border);background:var(--s1);color:var(--text);" value="'+esc(c.checkin||'')+'">'+
+      '</div>';
+    row.querySelector('[data-ci]').addEventListener('click',function(){toggleCheckIn(c.id);});
+    row.querySelector('[data-cldel]').addEventListener('click',function(){delClient(c.id);});
+    row.querySelector('[data-cf]').addEventListener('change',function(){c.focus=this.value.trim();save();renderClients();});
+    row.querySelector('[data-cc]').addEventListener('change',function(){c.checkin=this.value.trim();save();renderClients();});
+    el.appendChild(row);
+  });
 }
 
 /* CONTENT — scripts */
@@ -1300,6 +1450,7 @@ renderBonus();
 renderGoals();
 renderCustomGoals();
 applyHiddenGoals();
+renderClients();
 updateHeader();
 seedEvents();
 seedLeads();
