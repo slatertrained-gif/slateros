@@ -65,7 +65,7 @@ body{height:100%;font-family:'DM Sans',sans-serif;color:#EEF2FF;background:#0608
 .tg-bonus{background:rgba(255,184,48,0.12);color:var(--gold);}
 .tg-ngo{background:rgba(79,142,255,0.1);color:var(--blue);}
 .mantra{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--blue);background:rgba(79,142,255,0.06);border-left:2px solid var(--blue);border-radius:8px;padding:11px 13px;margin-bottom:14px;line-height:1.4;}
-.tr-del{margin-left:4px;background:none;border:none;color:var(--muted2);font-size:16px;cursor:pointer;padding:2px 4px;flex-shrink:0;}
+.tr-del{margin-left:4px;background:rgba(255,90,90,0.1);border:.5px solid rgba(255,90,90,0.25);color:var(--red);font-size:13px;font-weight:700;cursor:pointer;padding:4px 9px;flex-shrink:0;border-radius:7px;line-height:1;font-family:"DM Sans",sans-serif;}
 .lockin{background:linear-gradient(160deg,rgba(79,142,255,0.14),rgba(79,142,255,0.03));border:.5px solid var(--bb);border-radius:14px;padding:16px;margin-bottom:16px;text-align:center;}
 .li-cap{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin-bottom:10px;}
 .li-time{font-family:'Syne',sans-serif;font-size:52px;font-weight:700;color:var(--text);line-height:1;margin-bottom:14px;font-variant-numeric:tabular-nums;}
@@ -246,6 +246,10 @@ select.inp{-webkit-appearance:none;appearance:none;background-image:url("data:im
         <button class="li-chip" data-min="60">60</button>
         <button class="li-chip" data-min="90">90</button>
       </div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;align-items:center">
+        <input class="inp" id="li-custom" type="number" inputmode="numeric" min="1" max="480" placeholder="Custom min" style="width:120px;text-align:center">
+        <button class="btn btn-mute" onclick="setCustomFocus()">Set</button>
+      </div>
       <div class="li-controls">
         <button class="btn btn-bl" id="li-start" style="flex:1" onclick="startFocus()">Lock in</button>
         <button class="btn btn-mute" id="li-stop" style="flex:1;display:none" onclick="cancelFocus()">Stop</button>
@@ -274,22 +278,7 @@ select.inp{-webkit-appearance:none;appearance:none;background-image:url("data:im
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-bottom:12px"><input type="checkbox" id="ct-daily" style="width:18px;height:18px"> Make it a daily non-negotiable (counts toward your day)</label>
       <button class="btn btn-bl" style="width:100%" onclick="addCustomTask()">Add task</button>
     </div>
-    <div class="div"></div>
-    <div class="lbl">Daily metrics</div>
-    <div class="gc">
-      <div class="met-row">
-        <span class="met-name"><i class="ti ti-droplet" style="color:var(--ice)"></i> Water (glasses)</span>
-        <div class="met-ctrl"><button class="met-btn" onclick="adjWater(-1)">−</button><span class="met-val" id="met-water">0</span><button class="met-btn" onclick="adjWater(1)">+</button></div>
-      </div>
-      <div class="met-row">
-        <span class="met-name"><i class="ti ti-moon" style="color:var(--blue)"></i> Sleep (hrs)</span>
-        <input class="inp" style="width:84px" type="number" inputmode="decimal" id="met-sleep" placeholder="—" onchange="setMetric('sleep',this.value)">
-      </div>
-      <div class="met-row">
-        <span class="met-name"><i class="ti ti-walk" style="color:var(--green)"></i> Steps</span>
-        <input class="inp" style="width:104px" type="number" inputmode="numeric" id="met-steps" placeholder="—" onchange="setMetric('steps',this.value)">
-      </div>
-    </div>
+
     <div class="footer">SlaterTrained · Built different</div>
   </div>
 
@@ -330,33 +319,45 @@ select.inp{-webkit-appearance:none;appearance:none;background-image:url("data:im
 
   <!-- GOALS -->
   <div id="tab-goals" class="tc">
-    <div class="lbl">90-day targets</div>
-    <div class="gc">
-      <div class="gt"><i class="ti ti-users" style="color:var(--green);font-size:16px"></i><span id="cli-title">Gain 4 new clients</span></div>
+    <div class="lbl">Monthly targets</div>
+    <div class="gc" id="gc-cli">
+      <div class="gt" style="justify-content:space-between"><span><i class="ti ti-users" style="color:var(--green);font-size:16px;margin-right:7px"></i><span id="cli-title">Gain 4 new clients</span></span><button class="tr-del" onclick="hideFixedGoal('cli')">×</button></div>
       <div class="gb-w"><div class="gb gn" id="cli-bar" style="width:0%"></div></div>
       <div class="gm"><span id="cli-lbl">0 / 4 clients</span><span id="cli-pct">0%</span></div>
-      <div class="irow"><button class="btn btn-gn" onclick="adj('cli',1)">+ Client</button><button class="btn btn-mute" onclick="adj('cli',-1)">−</button></div>
+      <div class="irow"><button class="btn btn-gn" onclick="adj('cli',1)">+ Client</button><button class="btn btn-mute" onclick="adj('cli',-1)">− Client</button></div>
     </div>
-    <div class="gc">
-      <div class="gt"><i class="ti ti-currency-pound" style="color:var(--blue);font-size:16px"></i>Monthly revenue</div>
+    <div class="gc" id="gc-rev">
+      <div class="gt" style="justify-content:space-between"><span><i class="ti ti-currency-pound" style="color:var(--blue);font-size:16px;margin-right:7px"></i>Monthly revenue</span><button class="tr-del" onclick="hideFixedGoal('rev')">×</button></div>
       <div class="gb-w"><div class="gb bl" id="rev-bar" style="width:0%"></div></div>
       <div class="gm"><span id="rev-lbl">£0 / £5,000</span><span id="rev-pct">0%</span></div>
-      <div class="qrow"><button class="qchip" onclick="addQuick('rev',50)">+50</button><button class="qchip" onclick="addQuick('rev',100)">+100</button><button class="qchip" onclick="addQuick('rev',250)">+250</button></div>
-      <div class="irow"><input class="inp" type="number" inputmode="decimal" id="rev-in" placeholder="Add £"><button class="btn btn-bl" onclick="addNum('rev','rev-in')">Log</button></div>
+      <div class="qrow"><button class="qchip" onclick="addQuick('rev',50)">+50</button><button class="qchip" onclick="addQuick('rev',100)">+100</button><button class="qchip" onclick="addQuick('rev',250)">+250</button><button class="qchip" onclick="addQuick('rev',-50)" style="color:var(--red)">-50</button></div>
+      <div class="irow"><input class="inp" type="number" inputmode="decimal" id="rev-in" placeholder="Amount £"><button class="btn btn-bl" onclick="addNum('rev','rev-in')">+ Add</button><button class="btn btn-mute" onclick="subNum('rev','rev-in')">− Sub</button></div>
     </div>
-    <div class="gc">
-      <div class="gt"><i class="ti ti-cash" style="color:var(--green);font-size:16px"></i>Cash collected</div>
+    <div class="gc" id="gc-cash">
+      <div class="gt" style="justify-content:space-between"><span><i class="ti ti-cash" style="color:var(--green);font-size:16px;margin-right:7px"></i>Cash collected</span><button class="tr-del" onclick="hideFixedGoal('cash')">×</button></div>
       <div class="gb-w"><div class="gb gn" id="cash-bar" style="width:80%"></div></div>
       <div class="gm"><span id="cash-lbl">£8,000 / £10,000</span><span id="cash-pct">80%</span></div>
-      <div class="qrow"><button class="qchip" onclick="addQuick('cash',100)">+100</button><button class="qchip" onclick="addQuick('cash',250)">+250</button><button class="qchip" onclick="addQuick('cash',500)">+500</button></div>
-      <div class="irow"><input class="inp" type="number" inputmode="decimal" id="cash-in" placeholder="Add £"><button class="btn btn-gn" onclick="addNum('cash','cash-in')">Log</button></div>
+      <div class="qrow"><button class="qchip" onclick="addQuick('cash',100)">+100</button><button class="qchip" onclick="addQuick('cash',250)">+250</button><button class="qchip" onclick="addQuick('cash',500)">+500</button><button class="qchip" onclick="addQuick('cash',-100)" style="color:var(--red)">-100</button></div>
+      <div class="irow"><input class="inp" type="number" inputmode="decimal" id="cash-in" placeholder="Amount £"><button class="btn btn-gn" onclick="addNum('cash','cash-in')">+ Add</button><button class="btn btn-mute" onclick="subNum('cash','cash-in')">− Sub</button></div>
     </div>
-    <div class="gc">
-      <div class="gt"><i class="ti ti-car" style="color:var(--gold);font-size:16px"></i><span id="audi-title">Audi TTS fund</span></div>
+    <div class="gc" id="gc-audi">
+      <div class="gt" style="justify-content:space-between"><span><i class="ti ti-car" style="color:var(--gold);font-size:16px;margin-right:7px"></i><span id="audi-title">Audi TTS fund</span></span><button class="tr-del" onclick="hideFixedGoal('audi')">×</button></div>
       <div class="gb-w"><div class="gb go" id="audi-bar" style="width:0%"></div></div>
       <div class="gm"><span id="audi-lbl">£0 / £25,000</span><span id="audi-pct">0%</span></div>
-      <div class="qrow"><button class="qchip" onclick="addQuick('audi',100)">+100</button><button class="qchip" onclick="addQuick('audi',500)">+500</button><button class="qchip" onclick="addQuick('audi',1000)">+1000</button></div>
-      <div class="irow"><input class="inp" type="number" inputmode="decimal" id="audi-in" placeholder="Add £"><button class="btn btn-go" onclick="addNum('audi','audi-in')">Save</button></div>
+      <div class="qrow"><button class="qchip" onclick="addQuick('audi',100)">+100</button><button class="qchip" onclick="addQuick('audi',500)">+500</button><button class="qchip" onclick="addQuick('audi',1000)">+1000</button><button class="qchip" onclick="addQuick('audi',-100)" style="color:var(--red)">-100</button></div>
+      <div class="irow"><input class="inp" type="number" inputmode="decimal" id="audi-in" placeholder="Amount £"><button class="btn btn-go" onclick="addNum('audi','audi-in')">+ Add</button><button class="btn btn-mute" onclick="subNum('audi','audi-in')">− Sub</button></div>
+    </div>
+    <div class="div"></div>
+    <div class="lbl">Custom goals</div>
+    <div id="custom-goals-list"></div>
+    <div class="gc">
+      <div class="lbl">Create a new goal</div>
+      <input class="inp" style="width:100%;margin-bottom:8px" type="text" id="cg-name" placeholder="Goal name (e.g. Instagram followers)">
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input class="inp" style="flex:1" type="number" inputmode="decimal" id="cg-target" placeholder="Target number">
+        <input class="inp" style="width:90px" type="text" id="cg-unit" placeholder="Unit (£, kg…)">
+      </div>
+      <button class="btn btn-bl" style="width:100%" onclick="addCustomGoal()">Create goal</button>
     </div>
 
     <div class="div"></div>
@@ -505,21 +506,81 @@ const RANKS=[
   {name:'Top Dog',sub:'Business and body dialled',xp:2000},
   {name:'Slater Standard',sub:'Full discipline god mode',xp:4000},
 ];
-const AM_CORE=[
-  {t:'Write 1 hook — open loop + specificity (number, timeframe, or tradie identifier)',tag:'biz',xp:15},
-  {t:'Reply to every comment + DM, push leads to "Comment BUILD"',tag:'biz',xp:15},
-  {t:'Post today\u2019s piece with the CTA in the caption',tag:'biz',xp:15},
-];
-const PM_CORE=[
-  {t:'Hit macro targets for the day',tag:'bd',xp:10},
-  {t:'Whiteboard review: did today move the needle?',tag:'pm',xp:5},
-];
 const PM_WORKOUT={t:'Gym session — log it',tag:'bd',xp:20};
 const REST_ONLY=[
   {t:'20-min walk — active recovery',tag:'rec',xp:10},
   {t:'5 min stretch or mobility work',tag:'rec',xp:5},
   {t:'Read or listen to something that sharpens your mind',tag:'mnd',xp:5},
 ];
+function getStage(){
+  const cli=S.cli||0;
+  if(cli<=2)return 1;
+  if(cli<=5)return 2;
+  if(cli<=9)return 3;
+  return 4;
+}
+function getStageTasks(){
+  const stage=getStage();
+  const am={core:[]},pm={core:[],label:''};
+  if(stage===1){
+    am.core=[
+      {t:'Write 2 hooks — open loop + specificity. Film at least one.',tag:'biz',xp:20},
+      {t:'DM 5 warm leads — voice note or direct offer',tag:'biz',xp:20},
+      {t:'Post every day. No excuses. CTA: comment BUILD',tag:'biz',xp:15},
+      {t:'Reply to every comment + DM within the hour',tag:'biz',xp:15},
+    ];
+    pm.core=[
+      {t:'Hit macro targets for the day',tag:'bd',xp:10},
+      {t:'Whiteboard review: did today move the needle?',tag:'pm',xp:5},
+    ];
+    pm.label='Stage 1 — Grind. Get clients at all costs.';
+  } else if(stage===2){
+    am.core=[
+      {t:'Write 1 hook — open loop + specificity (number, timeframe, tradie ID)',tag:'biz',xp:15},
+      {t:'Post today’s piece with the CTA in the caption',tag:'biz',xp:15},
+      {t:'Reply to every comment + DM, push leads to "Comment BUILD"',tag:'biz',xp:15},
+      {t:'Book 1 sales call today',tag:'biz',xp:20},
+    ];
+    pm.core=[
+      {t:'Complete all client check-ins for today',tag:'biz',xp:15},
+      {t:'Ask 1 client for a testimonial or progress photo',tag:'biz',xp:10},
+      {t:'Hit macro targets for the day',tag:'bd',xp:10},
+      {t:'Whiteboard review: did today move the needle?',tag:'pm',xp:5},
+    ];
+    pm.label='Stage 2 — Traction. Prove the model.';
+  } else if(stage===3){
+    am.core=[
+      {t:'Batch content today — write 2 scripts + film 1',tag:'biz',xp:20},
+      {t:'Post 4x this week — quality + CTA every time',tag:'biz',xp:15},
+      {t:'Reply to DMs + comments — push warm leads to BUILD',tag:'biz',xp:10},
+    ];
+    pm.core=[
+      {t:'Complete all client check-ins — log their results',tag:'biz',xp:20},
+      {t:'Track every client’s progress this week',tag:'biz',xp:15},
+      {t:'Have 1 upsell conversation with a current client',tag:'biz',xp:15},
+      {t:'Review your onboarding — is it tight enough?',tag:'biz',xp:10},
+      {t:'Hit macro targets for the day',tag:'bd',xp:10},
+      {t:'Whiteboard review: did today move the needle?',tag:'pm',xp:5},
+    ];
+    pm.label='Stage 3 — Building. Systems + retention.';
+  } else {
+    am.core=[
+      {t:'Post 3x this week — content that attracts dream clients',tag:'biz',xp:15},
+      {t:'Reply to DMs + comments — protect your reputation',tag:'biz',xp:10},
+      {t:'Promote your waitlist in at least 1 piece of content',tag:'biz',xp:15},
+    ];
+    pm.core=[
+      {t:'Monthly review with every client — results + next 30 days',tag:'biz',xp:20},
+      {t:'Ask 2 happy clients for referrals today',tag:'biz',xp:20},
+      {t:'Review your pricing — are you charging what you’re worth?',tag:'biz',xp:10},
+      {t:'Identify your weakest client relationship and fix it',tag:'biz',xp:15},
+      {t:'Hit macro targets for the day',tag:'bd',xp:10},
+      {t:'Whiteboard review: did today move the needle?',tag:'pm',xp:5},
+    ];
+    pm.label='Stage 4 — Top Dog. Scale + protect.';
+  }
+  return {am,pm,stage};
+}
 const WK_AM=[
   {t:'Write 2 scripts — Hook \u2192 Problem \u2192 Tease \u2192 CTA \u2192 Automation',tag:'biz',xp:30},
   {t:'Film 2 talking heads from this week\u2019s scripts',tag:'biz',xp:25},
@@ -586,14 +647,15 @@ function buildTasks(){
   const amEl=document.getElementById('am-tasks');
   const pmEl=document.getElementById('pm-tasks');
   amEl.innerHTML='';pmEl.innerHTML='';allTasks=[];
+  const {am,pm,stage}=getStageTasks();
   const iceTask=iceToday==='shower'?{t:'Cold shower — 2 min. First thing. No negotiation.',tag:'ice',xp:15}:{t:'Ice bath — 5 min. First thing.',tag:'ice',xp:20};
-  const amList=[iceTask,...AM_CORE];
-  if(S.streak>=7)amList.push({t:'Re-record 1 old video with a stronger hook (script\u2019s already there)',tag:'biz',xp:15});
-  const pmList=isRestDay?[...REST_ONLY,...PM_CORE]:[PM_WORKOUT,...PM_CORE];
-  if(S.streak>=14)pmList.push({t:'Repurpose 1 script into a carousel — double your output',tag:'biz',xp:15});
-  if(S.streak>=21)pmList.push({t:'DM a warm lead a voice note or offer a call',tag:'biz',xp:15});
+  const amList=[iceTask,...am.core];
+  const pmList=isRestDay?[...REST_ONLY,...pm.core]:[PM_WORKOUT,...pm.core];
+  const stageLabels=['','Grind','Traction','Building','Top Dog'];
   document.getElementById('pm-lbl').textContent=isRestDay?'Rest day — discipline block':'After work block';
-  document.getElementById('unlock-notice').style.display=S.streak<7?'flex':'none';
+  const notice=document.getElementById('unlock-notice');
+  notice.style.display='flex';
+  notice.innerHTML='<i class="ti ti-chart-bar"></i>&nbsp;Stage '+stage+' — '+stageLabels[stage]+' &mdash; '+pm.label.split('. ').slice(1).join('. ');
   amList.forEach((task,i)=>{const key='am-'+i;allTasks.push({key,xp:task.xp});amEl.appendChild(makeRow(task,key,S.todayChecked.includes(key)));});
   pmList.forEach((task,i)=>{const key='pm-'+i;allTasks.push({key,xp:task.xp});pmEl.appendChild(makeRow(task,key,S.todayChecked.includes(key)));});
   const cdEl=document.getElementById('cd-tasks');const cdBlock=document.getElementById('cd-block');
@@ -608,7 +670,7 @@ function makeCustomRow(c,key,done,type){
   d.className='tr'+(done?' done':'');
   const tag=type==='ngo'?'ngo':'bonus';
   const tagtxt=type==='ngo'?'Daily':'Bonus';
-  d.innerHTML='<div class="chk"><div class="dot"></div></div><div class="tt">'+esc(c.text)+'</div><span class="tg tg-'+tag+'">'+tagtxt+'</span><button class="tr-del"><i class="ti ti-x"></i></button>';
+  d.innerHTML='<div class="chk"><div class="dot"></div></div><div class="tt">'+esc(c.text)+'</div><span class="tg tg-'+tag+'">'+tagtxt+'</span><button class="tr-del">×</button>';
   d.addEventListener('click',function(ev){if(ev.target.closest('.tr-del'))return;if(type==='ngo')toggleTask(d,key,c.xp);else toggleBonus(d,c);});
   d.querySelector('.tr-del').addEventListener('click',function(ev){ev.stopPropagation();if(type==='ngo')delCustomDaily(c.id);else delBonus(c.id);});
   return d;
@@ -642,7 +704,6 @@ function addCustomTask(){
   }
 }
 function delCustomDaily(id){
-  if(!confirm('Remove this non-negotiable?'))return;
   const key='cd-'+id;
   if(S.todayChecked.includes(key)){const c=(S.customDaily||[]).find(x=>x.id===id);const xp=c?c.xp:0;S.todayChecked=S.todayChecked.filter(k=>k!==key);S.todayDone--;S.todayXp-=xp;S.totalXp-=xp;S.tasksDoneTotal--;}
   S.customDaily=(S.customDaily||[]).filter(x=>x.id!==id);
@@ -713,8 +774,82 @@ function showToast(msg,broke){
 /* GOALS */
 function adj(key,delta){if(key==='cli')S.cli=Math.max(0,Math.min(S.tgt.cli,S.cli+delta));save();renderGoals();}
 function tgtMax(key){return key==='rev'?S.tgt.rev:key==='cash'?S.tgt.cash:key==='audi'?S.tgt.fund:1e12;}
-function addNum(key,inputId){const v=parseFloat(document.getElementById(inputId).value)||0;S[key]=Math.min(tgtMax(key),(S[key]||0)+v);document.getElementById(inputId).value='';save();renderGoals();}
-function addQuick(key,amt){S[key]=Math.min(tgtMax(key),(S[key]||0)+amt);save();renderGoals();showToast('+£'+amt+' logged',false);}
+function addNum(key,inputId){const v=parseFloat(document.getElementById(inputId).value)||0;S[key]=Math.min(tgtMax(key),Math.max(0,(S[key]||0)+v));document.getElementById(inputId).value='';save();renderGoals();}
+function subNum(key,inputId){const v=parseFloat(document.getElementById(inputId).value)||0;S[key]=Math.max(0,(S[key]||0)-v);document.getElementById(inputId).value='';save();renderGoals();showToast('-£'+v+' removed',false);}
+function addQuick(key,amt){if(amt<0){S[key]=Math.max(0,(S[key]||0)+amt);save();renderGoals();showToast(amt+' removed',false);}else{S[key]=Math.min(tgtMax(key),(S[key]||0)+amt);save();renderGoals();showToast('+'+amt+' logged',false);}}
+function hideFixedGoal(key){
+  if(!S.hiddenGoals)S.hiddenGoals=[];
+  if(!S.hiddenGoals.includes(key))S.hiddenGoals.push(key);
+  save();applyHiddenGoals();
+}
+function applyHiddenGoals(){
+  ['cli','rev','cash','audi'].forEach(k=>{
+    const el=document.getElementById('gc-'+k);
+    if(el)el.style.display=(S.hiddenGoals||[]).includes(k)?'none':'block';
+  });
+}
+/* CUSTOM GOALS */
+function addCustomGoal(){
+  const name=document.getElementById('cg-name').value.trim();
+  const target=parseFloat(document.getElementById('cg-target').value)||0;
+  const unit=document.getElementById('cg-unit').value.trim();
+  if(!name||!target){showToast('Add a name and target',true);return;}
+  if(!S.customGoals)S.customGoals=[];
+  S.customGoals.push({id:'cg'+Date.now(),name,target,unit,current:0});
+  document.getElementById('cg-name').value='';document.getElementById('cg-target').value='';document.getElementById('cg-unit').value='';
+  save();renderCustomGoals();showToast('Goal created',false);
+}
+function adjCustomGoal(id,amount){
+  const g=(S.customGoals||[]).find(x=>x.id===id);if(!g)return;
+  const inp=document.getElementById('cgi-'+id);
+  const v=inp?parseFloat(inp.value)||amount:amount;
+  g.current=Math.max(0,g.current+v);
+  if(inp)inp.value='';
+  save();renderCustomGoals();
+}
+function delCustomGoal(id){
+  S.customGoals=(S.customGoals||[]).filter(x=>x.id!==id);
+  save();renderCustomGoals();
+}
+const CG_PALETTES=[
+  {bar:'#4F8EFF',icon:'var(--blue)',btn:'btn-bl'},
+  {bar:'#4FD17A',icon:'var(--green)',btn:'btn-gn'},
+  {bar:'#FFB830',icon:'var(--gold)',btn:'btn-go'},
+  {bar:'#FF5A5A',icon:'var(--red)',btn:'btn-mute'},
+  {bar:'#82C8FF',icon:'var(--ice)',btn:'btn-bl'},
+  {bar:'#F7931A',icon:'var(--btc)',btn:'btn-bt'},
+];
+function renderCustomGoals(){
+  const el=document.getElementById('custom-goals-list');if(!el)return;el.innerHTML='';
+  const list=S.customGoals||[];
+  if(list.length===0){el.innerHTML='<div style="font-size:13px;color:var(--muted);padding:4px 0 10px">No custom goals yet. Create one below.</div>';return;}
+  list.forEach((g,i)=>{
+    const pal=CG_PALETTES[i%CG_PALETTES.length];
+    const pct=g.target?Math.min(100,Math.round((g.current/g.target)*100)):0;
+    const card=document.createElement('div');card.className='gc';card.style.marginBottom='9px';
+    card.innerHTML='<div class="gt" style="justify-content:space-between"><span style="color:'+pal.icon+'">'+esc(g.name)+'</span><button class="tr-del" data-cgid="'+g.id+'"><i class="ti ti-x"></i></button></div>'+
+      '<div class="gb-w"><div class="gb" style="width:'+pct+'%;background:'+pal.bar+'"></div></div>'+
+      '<div class="gm"><span>'+g.current+(g.unit?' '+g.unit:'')+' / '+g.target+(g.unit?' '+g.unit:'')+'</span><span style="color:'+pal.bar+'">'+pct+'%</span></div>'+
+      '<div class="irow"><input class="inp" id="cgi-'+g.id+'" type="number" inputmode="decimal" placeholder="Amount">'+
+      '<button class="btn '+pal.btn+'" data-cgadd="'+g.id+'">+ Add</button>'+
+      '<button class="btn btn-mute" data-cgsub="'+g.id+'">− Sub</button></div>';
+    card.querySelector('[data-cgid]').addEventListener('click',function(){delCustomGoal(g.id);});
+    card.querySelector('[data-cgadd]').addEventListener('click',function(){adjCG(g.id,1);});
+    card.querySelector('[data-cgsub]').addEventListener('click',function(){adjCG(g.id,-1);});
+    el.appendChild(card);
+  });
+}
+function adjCG(id,sign){
+  const g=(S.customGoals||[]).find(x=>x.id===id);if(!g)return;
+  const inp=document.getElementById('cgi-'+id);
+  const v=inp?parseFloat(inp.value)||0:0;
+  if(v===0){showToast('Enter an amount first',true);return;}
+  g.current=Math.max(0,g.current+sign*v);
+  if(inp)inp.value='';
+  save();renderCustomGoals();
+  showToast((sign>0?'+':'-')+v+(g.unit?' '+g.unit:'')+' logged',false);
+}
+
 function openSettings(){
   document.getElementById('set-cli').value=S.tgt.cli;
   document.getElementById('set-rev').value=S.tgt.rev;
@@ -734,14 +869,6 @@ function saveSettings(){
   S.cli=Math.min(S.cli,S.tgt.cli);
   save();renderGoals();closeSettings();showToast('Settings saved',false);
 }
-function adjWater(d){if(!S.metricsToday)S.metricsToday={water:0,sleep:'',steps:''};S.metricsToday.water=Math.max(0,(S.metricsToday.water||0)+d);save();renderMetrics();}
-function setMetric(k,v){if(!S.metricsToday)S.metricsToday={water:0,sleep:'',steps:''};S.metricsToday[k]=v;save();}
-function renderMetrics(){
-  const m=S.metricsToday||{water:0,sleep:'',steps:''};
-  document.getElementById('met-water').textContent=m.water||0;
-  document.getElementById('met-sleep').value=m.sleep||'';
-  document.getElementById('met-steps').value=m.steps||'';
-}
 function setInv(key,inputId){const v=parseFloat(document.getElementById(inputId).value)||0;if(v>=0)S[key]=v;document.getElementById(inputId).value='';save();renderGoals();}
 function renderGoals(){
   const T=S.tgt;
@@ -758,6 +885,8 @@ function renderGoals(){
   document.getElementById('btc-val').textContent='£'+Math.round(S.btc).toLocaleString();
   document.getElementById('inv-total-val').textContent='£'+Math.round(S.sav+S.sp+S.btc).toLocaleString();
   renderWeight();
+  renderCustomGoals();
+  applyHiddenGoals();
 }
 async function fetchBtc(){
   try{const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=gbp');if(!r.ok)return;const d=await r.json();const p=d&&d.bitcoin&&d.bitcoin.gbp;document.getElementById('btc-price').textContent=p?'£'+Math.round(p).toLocaleString():'—';}catch(e){document.getElementById('btc-price').textContent='—';}
@@ -831,7 +960,7 @@ function toggleFormat(id,fmt){
   const s=(S.scripts||[]).find(x=>x.id===id);if(!s)return;
   s.formats[fmt]=!s.formats[fmt];save();renderScripts();
 }
-function delScript(id){if(!confirm('Delete this script?'))return;S.scripts=(S.scripts||[]).filter(x=>x.id!==id);save();renderScripts();}
+function delScript(id){S.scripts=(S.scripts||[]).filter(x=>x.id!==id);save();renderScripts();}
 function renderScripts(){
   const el=document.getElementById('scripts-list');if(!el)return;el.innerHTML='';
   const list=S.scripts||[];
@@ -901,7 +1030,7 @@ function cycleLead(id){
   save();renderLeads();
   if(l.stage===3)showToast('Signed! Log it in Goals →',false);
 }
-function delLead(id){if(!confirm('Delete this lead?'))return;S.leads=(S.leads||[]).filter(x=>x.id!==id);save();renderLeads();}
+function delLead(id){S.leads=(S.leads||[]).filter(x=>x.id!==id);save();renderLeads();}
 function renderLeads(){
   const el=document.getElementById('leads-list');if(!el)return;el.innerHTML='';
   const list=S.leads||[];
@@ -957,7 +1086,6 @@ function copyBackup(){
 function importData(){
   const raw=document.getElementById('import-box').value.trim();
   if(!raw){showToast('Paste a code first',true);return;}
-  if(!confirm('Restore from this backup? It replaces your current data.'))return;
   try{
     const data=JSON.parse(raw);
     if(typeof data!=='object'||data===null)throw new Error('bad');
@@ -1008,7 +1136,7 @@ function renderCalEvents(){
   evs.forEach(e=>{
     const row=document.createElement('div');row.className='ev-row';
     row.innerHTML='<div class="ev-time">'+(e.time||'—')+'</div><div class="ev-body"><div class="ev-name">'+esc(e.title)+'</div>'+(e.notes?'<div class="ev-notes">'+esc(e.notes)+'</div>':'')+'<div class="ev-actions"><a class="ev-gbtn" href="'+gcalUrl(e)+'" target="_blank" rel="noopener"><i class="ti ti-brand-google"></i>Add to Google Cal</a><button class="ev-del">Delete</button></div></div>';
-    row.querySelector('.ev-del').addEventListener('click',function(){if(!confirm('Delete this event?'))return;S.events=(S.events||[]).filter(x=>x.id!==e.id);save();renderCal();});
+    row.querySelector('.ev-del').addEventListener('click',function(){S.events=(S.events||[]).filter(x=>x.id!==e.id);save();renderCal();});
     el.appendChild(row);
   });
 }
@@ -1103,8 +1231,33 @@ function focusRunningUI(running){
   document.getElementById('li-stop').style.display=running?'block':'none';
   document.getElementById('li-display').classList.toggle('running',running);
   document.querySelectorAll('.li-chip').forEach(c=>c.style.opacity=running?'0.4':'1');
+  const ci=document.getElementById('li-custom');if(ci)ci.disabled=running;
 }
-function selectFocusPreset(min,btn){if(S.focusActive)return;liSelected=min;document.querySelectorAll('.li-chip').forEach(c=>c.classList.remove('on'));btn.classList.add('on');setFocusDisplay(min*60000);}
+function setCustomFocus(){
+  if(S.focusActive)return;
+  const v=parseInt(document.getElementById('li-custom').value);
+  if(!v||v<1||v>480){showToast('Enter 1–480 minutes',true);return;}
+  liSelected=v;
+  document.querySelectorAll('.li-chip').forEach(c=>c.classList.remove('on'));
+  setFocusDisplay(v*60000);
+  showToast(v+' min set',false);
+}
+function selectFocusPreset(min,btn){if(S.focusActive)return;liSelected=min;document.querySelectorAll('.li-chip').forEach(c=>c.classList.remove('on'));btn.classList.add('on');const ci=document.getElementById('li-custom');if(ci)ci.value='';setFocusDisplay(min*60000);}
+function playChime(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    [0,0.18,0.36].forEach((t,i)=>{
+      const o=ctx.createOscillator();const g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.frequency.value=[660,784,880][i];o.type='sine';
+      g.gain.setValueAtTime(0,ctx.currentTime+t);
+      g.gain.linearRampToValueAtTime(0.4,ctx.currentTime+t+0.05);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+t+0.7);
+      o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+0.8);
+    });
+  }catch(e){}
+  if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);
+}
 function startFocus(){
   if(S.focusActive)return;
   S.focusActive={endTs:Date.now()+liSelected*60000,durMin:liSelected};
@@ -1124,6 +1277,7 @@ function completeFocus(){
   S.focusMinutes=(S.focusMinutes||0)+dur;
   S.todayXp+=dur;S.totalXp+=dur;
   save();focusRunningUI(false);setFocusDisplay(liSelected*60000);renderFocusStat();updatePB();updateHeader();
+  playChime();
   showToast('Locked in '+dur+' min 🔥 +'+dur+' XP',false);
 }
 function cancelFocus(){
@@ -1143,8 +1297,9 @@ function initFocus(){
 
 buildTasks();
 renderBonus();
-renderMetrics();
 renderGoals();
+renderCustomGoals();
+applyHiddenGoals();
 updateHeader();
 seedEvents();
 seedLeads();
